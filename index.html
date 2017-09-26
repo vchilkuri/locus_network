@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<html>
+<head>
+<style>
+
+.node {
+  stroke: #fff;
+  stroke-width: 1.5px;
+}
+.node {
+  opacity: 0.7;
+}
+
+.node:hover {
+  opacity: 1.0;
+}
+.link {
+  stroke: #999;
+  stroke-opacity: .5;
+}
+.link:hover{
+  stroke-opacity : 1.0;
+}
+div.tooltip {
+    position: absolute;
+    text-align: center;
+    width: 60px;
+    height: 28px;
+    padding: 2px;
+    font: 12px sans-serif;
+    background: lightsteelblue;
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
+}
+</style>
+<script src="https://d3js.org/d3.v3.min.js"></script>
+<script src="https://d3js.org/d3-queue.v3.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.1/jquery.min.js" charset="utf-8"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui/1.12.1/jquery-ui.min.js"></script>
+</head>
+<body>
+<script>
+var width = 1000;
+var height = 690;
+d3.queue()
+   .defer(d3.csv, "nodes.csv")
+   .defer(d3.csv, "edges.csv")
+   .await(function(error, file1, file2) {createForceLayout(file1, file2);});
+   function createForceLayout(nodes, edges) {
+     var nodeHash = {};
+     for (x in nodes) {
+       nodeHash[nodes[x].id] = nodes[x];
+     }
+
+     for (x in edges) {
+       edges[x].weight = 1; //you have no weight
+       edges[x].source = nodeHash[edges[x].source];
+       edges[x].target = nodeHash[edges[x].target];
+     }
+     var svg = d3.select("body").append("svg")
+                     .attr("width",width)
+                     .attr("height",height);
+
+
+     force = d3.layout.force()
+       .charge(-500)
+       .gravity(.3)
+       .linkDistance(200)
+       .size([width,height])
+       .nodes(nodes)
+       .links(edges)
+       .start();
+       var color = d3.scale.category20();
+       svg.append("svg:defs").selectAll("marker")
+           .data(["end"])      // Different link/path types can be defined here
+         .enter().append("svg:marker")    // This section adds in the arrows
+           .attr("id", String)
+           .attr("viewBox", "0 -5 10 10")
+           .attr("refX", 18)
+           .attr("refY", 0)
+           .attr("markerWidth", 6)
+           .attr("markerHeight", 6)
+           .attr("orient", "auto")
+         .append("svg:path")
+           .attr("d", "M0,-5L10,0L0,5")
+           .attr('fill', '#aaa')
+            .attr('stroke','#ccc')
+
+
+        var link = svg.selectAll(".link")
+            .data(edges)
+          .enter().append("line")
+          .attr("class", "link")
+          .style("stroke-width", 2)
+           .attr("marker-end", "url(#end)");
+
+        var node = svg.selectAll(".node")
+            .data(nodes)
+          .enter().append("circle")
+            .attr("class", "node")
+            .attr("id", nodes.Activity)
+            .attr("r", 10)
+            .attr("fill", function(d) { return color(d.Object); })
+            .call(force.drag);
+
+                node.on("mouseover", function(d) {
+                  d3.select(this).transition().attr("r", 15);
+                  });
+                  node.on("mouseout", function(){
+                    d3.select(this).transition().attr("r", 10);
+                  });
+
+
+            link.append("width")
+            .attr("stroke-width", function(d) { return nodes.Activity; })
+        node.append("title")
+            .text(function(d) { return d.label; });
+        link.append("title")
+            .text(function(d) { return d.Label; });
+
+        force.on("tick", function() {
+          link.attr("x1", function(d) { return d.source.x; })
+              .attr("y1", function(d) { return d.source.y; })
+              .attr("x2", function(d) { return d.target.x; })
+              .attr("y2", function(d) { return d.target.y; });
+
+          node.attr("cx", function(d) { return d.x; })
+              .attr("cy", function(d) { return d.y; });
+
+
+});
+};
+
+</script>
+
+</body>
+</html>
